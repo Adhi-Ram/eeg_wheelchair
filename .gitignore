@@ -1,0 +1,17 @@
+cat > .gitignore << 'EOF'
+# EEG recordings / raw data
+*.csv
+*.bdf
+*.edf
+data/raw/
+
+# Python clutter
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# OS junk
+.DS_Store
+EOF
+
