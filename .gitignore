@@ -1,17 +1,17 @@
-cat > .gitignore << 'EOF'
-# EEG recordings / raw data
-*.csv
-*.bdf
-*.edf
-data/raw/
+# Raw recordings (never committed); keep the folder itself
+data/raw/*
+!data/raw/.gitkeep
 
-# Python clutter
+# Python caches
 __pycache__/
-*.pyc
+*.py[cod]
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Virtual environments
 venv/
 .venv/
 
 # OS junk
 .DS_Store
-EOF
-
