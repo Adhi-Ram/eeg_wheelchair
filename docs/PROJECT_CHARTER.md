@@ -3,9 +3,9 @@
 | Field | Value |
 |---|---|
 | Project lead | Adhitya (UCLA Bioengineering) |
-| Status | Phase 1: Research |
-| Charter version | 0.1 (draft) |
-| Last updated | 2026-09-29 |
+| Status | Phase 1: Research (Phase 3 SSVEP data-collection tooling fast-tracked, see decision log 2026-10-22) |
+| Charter version | 0.2 (draft) |
+| Last updated | 2026-10-22 |
 
 ---
 
@@ -127,6 +127,7 @@ Durations are estimates and will be revised.
 - **Goal:** Understand prior work and commit to a paradigm.
 - **Deliverables:** Literature notes in `docs/literature/`; confirmed paradigm; updated charter; initialized repository.
 - **Gate:** Paradigm decision recorded in the decision log with supporting references. Open questions in Section 10 answered or explicitly deferred.
+- **Approved exception (2026-10-22):** Phase 3 SSVEP data-collection tooling (acquisition, stimulus, offline quick-look) may be built in parallel with Phase 1. Online decoding, EMG, and vehicle control are not included. See `docs/DECISION_LOG.md`.
 
 ### Phase 2: Pipeline validation on public data
 - **Goal:** Confirm the decoding code works on data known to contain the signal.
@@ -277,3 +278,4 @@ Full notes for each reference live in `docs/literature/`.
 | Version | Date | Changes |
 |---|---|---|
 | 0.1 | 2026-09-29 | Initial draft |
+| 0.2 | 2026-10-22 | Fast-tracked Phase 3 SSVEP data-collection tooling during Phase 1 (Status field, Section 5) |
