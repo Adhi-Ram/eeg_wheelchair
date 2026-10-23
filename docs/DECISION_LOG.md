@@ -28,6 +28,30 @@ Copy this block for each new decision.
 
 <!-- Add entries below, newest first. -->
 
+## 2026-10-22: EMG channel, idle behavior, and obstacle behavior
+
+- **Context:** Open questions 1, 3 and 4 in the charter.
+- **Decisions:**
+  1. **EMG channel:** use the Cyton channel that is least useful for SSVEP. Provisionally ch 8 (PO8), since SSVEP is strongest at Oz, O1, O2 and POz and PO8 is one of the most lateral sites. EMG is recorded bipolar (two forearm electrodes on N8P and P8P, SRB2 disconnected for ch 8). The first M2 recordings keep all 8 EEG channels so the least useful channel can be confirmed from data before switching.
+  2. **Idle:** when the user is not looking at any box, the car stays in place. The decoder must be able to output "no command" (M3).
+  3. **Obstacles:** if an obstacle is in the way and the commanded direction has not changed, the car goes around it and continues in the same direction. Stopping before the obstacle is built first.
+- **Reasoning:** Project lead's design choices. Staying in place when idle is also the safe default (charter Section 5).
+- **Consequences:** Charter Sections 1, 3, 4 and 7 updated. Open questions reduced to the command set and how to hold heading around obstacles. `MONTAGE` in `src/acquisition/cyton_stream.py` stays at 8 EEG channels until the EMG switch at M4.
+- **Status:** Accepted
+
+
+## 2026-10-22: Car platform: Freenove 4WD Smart Car Kit with Raspberry Pi 5
+
+- **Context:** M5 and M6 need a car. No car hardware is owned yet.
+- **Options considered:**
+  1. Freenove 4WD Smart Car Kit: tank-style (differential) steering that turns in place, ultrasonic sensor on a pan servo, camera, reported working on Pi 5.
+  2. SunFounder PiCar-X: car-style (servo) front steering that cannot turn in place, ultrasonic and camera; sold out on the maker's store when checked.
+- **Decision:** Option 1, with a Raspberry Pi 5 (4GB) and a travel router for a private network.
+- **Reasoning:** Turning in place maps cleanly onto discrete SSVEP commands (left means rotate left). The servo-mounted ultrasonic sensor can scan left and right, which supports steering around obstacles in M6.
+- **Consequences:** Parts list in `hardware/PARTS_LIST.md`. Charter Section 3 updated; open question 5 resolved.
+- **Status:** Accepted
+
+
 ## 2026-10-22: Simplify the project to a shared-control RC car with milestones
 
 - **Context:** The six-phase wheelchair charter, plus fast-tracking Phase 3 work, made it hard to track where the project stands. After reading some of the research, the project lead settled on a concrete design.
