@@ -1,283 +1,130 @@
-# EEG Wheelchair: Project Charter
+# Brain-Controlled RC Car: Project Charter
 
 | Field | Value |
 |---|---|
 | Project lead | Adhitya (UCLA Bioengineering) |
-| Status | Phase 1: Research (Phase 3 SSVEP data-collection tooling fast-tracked, see decision log 2026-10-22) |
-| Charter version | 0.3 (draft) |
+| Current milestone | M1: SSVEP data-collection app (built, fixing frame drops) |
+| Charter version | 1.0 |
 | Last updated | 2026-10-22 |
 
----
-
-## 0. How to use this document
-
-This charter is the single source of truth for the project's goal, scope, phases, and working rules. It is written for two audiences: the project lead, and AI assistants (Claude Code, Claude Cowork) that work in this repository.
-
-**For AI assistants:**
-- Read this file before starting any task in this repository.
-- Check Section 5 to learn the current phase. Do not build components that belong to a later phase unless explicitly asked.
-- Follow the working principles in Section 8. They exist because earlier versions of this project failed by skipping them.
-- Treat items in Section 10 (Open Questions) as undecided. Do not assume an answer; ask or flag it.
-- When a decision is made, it is recorded in `docs/DECISION_LOG.md`, and this charter is updated to match.
+This is the single source of truth for the project. It is short on purpose. Build as you go, one milestone at a time.
 
 ---
 
-## 1. Vision
+## 1. Goal
 
-Build a wheelchair that a user can steer using brain activity (EEG), with muscle activity (EMG) providing a fast and reliable safety channel. Before working with a wheelchair, the full system is proven on a small RC car.
+A **shared-control RC car**:
 
-The long-term goal is a system that is genuinely usable, not just a lab demo: reliable command decoding, a dependable stop mechanism, and enough onboard intelligence (shared control) that the user provides high-level intent while the vehicle handles low-level safety.
+- **SSVEP picks the direction.** Four flickering boxes on the laptop screen. Looking at one sends that direction to the car.
+- **EMG on the right forearm is the stop.** A deliberate muscle clench stops the car immediately and overrides everything else.
+- **The car handles obstacles itself.** An onboard sensor detects obstacles. First the car stops before hitting them; later it steers around them.
 
----
-
-## 2. Background and lessons learned
-
-Two previous attempts did not succeed. Their failure modes shape this charter.
-
-### Attempt 1: "Think the direction" decoding
-- **Approach:** The user imagined the desired direction, and the system tried to decode it from EEG.
-- **Outcome:** Recordings appeared to contain no usable signal.
-- **Likely cause:** Abstract directional intention has no reliable scalp EEG signature. Decodable imagined-movement signals (motor imagery) require specific body-part imagery, specific electrode sites (C3, Cz, C4), and substantial user training.
-
-### Attempt 2: P300 with flashing arrows
-- **Approach:** Four arrows (forward, back, left, right) flashed; the target was identified from the P300 response.
-- **Outcome:** Did not work reliably.
-- **Likely causes (to be verified):**
-  - Stimulus and EEG timestamps were not tightly synchronized; Bluetooth streaming jitter smears the P300.
-  - With only four targets, each flash is a 25% event, which weakens the oddball response.
-  - Too few repetitions averaged before classification.
-  - Electrode montage may not have covered centro-parietal sites (Cz, Pz, P3, P4, PO7, PO8).
-
-### Process lessons
-1. Too little time was spent reviewing prior work before building.
-2. Project direction was not fixed, so effort was scattered.
-3. The full system was built before confirming that the signal existed.
+The user gives high-level intent; the car handles low-level safety. A wheelchair version comes later and is out of scope for now.
 
 ---
 
-## 3. Technical approach
-
-> **Status:** Proposed. The paradigm choice is confirmed or revised at the end of Phase 1 (see Section 10).
-
-### 3.1 Control paradigm (proposed)
-- **Primary: SSVEP.** Each command is a visual stimulus flickering at a distinct frequency. Looking at a stimulus produces a measurable response at that frequency (and its harmonics) over the visual cortex. SSVEP offers high signal-to-noise ratio with 8 channels, requires little or no user training, and can be decoded without calibration using CCA-based methods.
-- **Safety channel: EMG.** A deliberate muscle action (for example, a jaw clench) acts as an immediate stop and, optionally, a command confirmation. The stop must never depend on the slower EEG channel.
-- **Shared control (Phase 6).** The BCI supplies high-level intent; the vehicle handles obstacle detection and low-level motion.
-
-**Known limitation:** SSVEP requires the user to look at the stimuli rather than the environment. This is acceptable for the RC car stage and must be addressed before the wheelchair stage (for example, stimuli placed in the user's field of view, or a hybrid design).
-
-### 3.2 Hardware
-| Component | Details | Notes |
-|---|---|---|
-| EEG | OpenBCI Cyton, 8 channels, 250 Hz | Streams via Bluetooth dongle; timing jitter must be handled |
-| EMG | To be confirmed | See Section 10 |
-| Stimulus display | Laptop or monitor | Refresh rate constrains usable SSVEP frequencies |
-| Proof-of-concept vehicle | RC car with Raspberry Pi | Pi robot car kit preferred over modifying a stock RC car |
-| Final vehicle | Wheelchair | Source to be confirmed |
-
-**Proposed SSVEP montage:** O1, Oz, O2, PO3, POz, PO4, PO7, PO8 (reference and ground per OpenBCI guidance).
-
-### 3.3 Software stack (proposed)
-| Purpose | Tool |
-|---|---|
-| Cyton acquisition | BrainFlow |
-| Time synchronization of streams | Lab Streaming Layer (LSL) |
-| Stimulus presentation | PsychoPy (frame-locked timing) |
-| Offline analysis | MNE-Python, NumPy, SciPy |
-| Benchmarking on public data | MOABB |
-| Decoding | CCA / filter-bank CCA to start; TRCA as a later option |
-| Vehicle communication | UDP over Wi-Fi, laptop to Raspberry Pi |
-| Python | 3.11 in `.venv` (PsychoPy does not install on 3.14; see decision log 2026-10-22) |
-
-**Architecture rule:** All signal processing and decoding runs on the laptop. The Raspberry Pi only receives simple commands and drives motors.
-
----
-
-## 4. Scope
-
-### In scope
-- Non-invasive EEG and surface EMG only.
-- A small command set (target: 4 motion commands plus stop).
-- Testing on the project lead as the primary user.
-- RC car proof of concept, followed by a wheelchair prototype.
-
-### Out of scope (for now)
-- Invasive recording of any kind.
-- Continuous (proportional) control; the system issues discrete commands.
-- Use by people with disabilities or testing on other participants without appropriate review (see Section 7).
-- Custom EEG hardware.
-
----
-
-## 5. Phases and go/no-go criteria
-
-Each phase ends with a gate. The next phase does not begin until the gate criteria are met or a documented decision is made to change them.
-
-| Phase | Name | Est. duration |
-|---|---|---|
-| 1 | Research and planning | 2-3 weeks |
-| 2 | Pipeline validation on public data | 1-2 weeks |
-| 3 | Signal sanity check with Cyton | 1-2 weeks |
-| 4 | Online decoding on screen | 3-4 weeks |
-| 5 | RC car integration | 3-4 weeks |
-| 6 | Wheelchair prototype | TBD |
-
-Durations are estimates and will be revised.
-
-### Phase 1: Research and planning (CURRENT)
-- **Goal:** Understand prior work and commit to a paradigm.
-- **Deliverables:** Literature notes in `docs/literature/`; confirmed paradigm; updated charter; initialized repository.
-- **Gate:** Paradigm decision recorded in the decision log with supporting references. Open questions in Section 10 answered or explicitly deferred.
-- **Approved exception (2026-10-22):** Phase 3 SSVEP data-collection tooling (acquisition, stimulus, offline quick-look) may be built in parallel with Phase 1. Online decoding, EMG, and vehicle control are not included. See `docs/DECISION_LOG.md`.
-
-### Phase 2: Pipeline validation on public data
-- **Goal:** Confirm the decoding code works on data known to contain the signal.
-- **Deliverables:** Notebook that loads a public SSVEP dataset and reports classification accuracy.
-- **Gate:** Accuracy comparable to published results for the same method and dataset. If not, the bug is in the pipeline, not the hardware.
-
-### Phase 3: Signal sanity check with Cyton
-- **Goal:** Confirm the recording setup captures real brain signals.
-- **Deliverables:** Offline recordings and analysis notebooks.
-- **Gate:**
-  1. Eyes-closed recordings show a clear alpha peak (around 10 Hz) over occipital channels compared with eyes-open.
-  2. SSVEP recordings show clear spectral peaks at each stimulus frequency.
-  3. Offline classification of recorded SSVEP trials is clearly above chance.
-  4. Stimulus and EEG timestamps are synchronized, with measured latency and jitter documented.
-
-### Phase 4: Online decoding on screen
-- **Goal:** Real-time classification of which stimulus the user is attending to.
-- **Deliverables:** Real-time application showing decoded commands; EMG stop detection.
-- **Gate (targets, to be refined in Phase 1):**
-  - Online accuracy of at least 85% across the command set.
-  - Decision time of a few seconds or less per command.
-  - Low false-command rate when the user is not attending to any stimulus (idle state).
-  - EMG stop detected reliably with minimal latency.
-
-### Phase 5: RC car integration
-- **Goal:** Drive the RC car with the Phase 4 system.
-- **Deliverables:** Pi-based car receiving commands over Wi-Fi; end-to-end demo.
-- **Gate:** The user completes a simple course (for example, a short route with turns) using only BCI and EMG commands, with the EMG stop working every time.
-
-### Phase 6: Wheelchair prototype
-- **Goal:** Port the system to a wheelchair with shared control.
-- **Deliverables:** Defined at the end of Phase 5.
-- **Gate:** Defined at the end of Phase 5. Safety requirements in Section 7 apply in full.
-
----
-
-## 6. Success metrics
-
-| Metric | Definition | Tracked from |
-|---|---|---|
-| Classification accuracy | Correct commands / total commands | Phase 2 |
-| Decision time | Seconds from stimulus onset to issued command | Phase 4 |
-| Information transfer rate (ITR) | Standard BCI bits-per-minute measure | Phase 4 |
-| Idle false-positive rate | Unintended commands per minute while idle | Phase 4 |
-| Stop latency | Time from EMG action to vehicle stop | Phase 4 |
-| Task completion | Course completed without manual intervention | Phase 5 |
-
----
-
-## 7. Safety and ethics
-
-- **Independent kill switch:** Every vehicle has a physical or remote stop that does not depend on the BCI or EMG pipeline.
-- **EMG stop priority:** The EMG stop overrides all EEG commands.
-- **Fail-safe default:** If the signal stream drops or decoding confidence is low, the vehicle stops.
-- **Speed limits:** Conservative speed caps on all vehicles, especially the wheelchair.
-- **Spotter required:** Wheelchair testing always has a second person present.
-- **Electrical safety:** The Cyton runs on battery power. It is not connected to mains-powered equipment while worn.
-- **Human subjects:** Testing on anyone other than the project lead requires checking UCLA IRB requirements first.
-- **Not a medical device:** This is a research prototype and is not intended for clinical use.
-
----
-
-## 8. Working principles
-
-These apply to all contributors, including AI assistants.
-
-1. **Prove the signal before building on it.** Every new paradigm or setup is validated offline before any real-time or hardware work.
-2. **Validate code on known-good data first.** New analysis or decoding code is tested on public datasets before being applied to new recordings.
-3. **Stay in the current phase.** Work that belongs to a later phase is noted, not built.
-4. **Start simple.** Use the simplest method that meets the gate (for example, CCA before deep learning).
-5. **Log decisions.** Significant choices go in `docs/DECISION_LOG.md` with date, options considered, and reasoning.
-6. **Log experiments.** Every recording session gets an entry in `docs/experiments/` with date, setup, montage, conditions, and outcome, including failures.
-7. **Measure timing.** Any component that timestamps events has its latency and jitter measured, not assumed.
-8. **Safety is not deferred.** Safety requirements in Section 7 are built in at the phase where they first apply.
-
----
-
-## 9. Repository structure
+## 2. How it fits together
 
 ```
-eeg-wheelchair/
-├── CLAUDE.md                  # Short orientation for Claude Code; points here
-├── README.md                  # Human-facing overview
-├── docs/
-│   ├── PROJECT_CHARTER.md     # This file
-│   ├── DECISION_LOG.md        # Dated record of decisions
-│   ├── literature/            # One note per paper
-│   └── experiments/           # One log per recording session
-├── data/
-│   ├── raw/                   # Unmodified recordings (not committed to Git)
-│   └── processed/
-├── notebooks/                 # Exploratory and offline analysis
-├── src/
-│   ├── acquisition/           # BrainFlow / LSL streaming
-│   ├── stimulus/              # PsychoPy stimulus code
-│   ├── processing/            # Filtering, epoching, feature extraction
-│   ├── decoding/              # Classifiers
-│   └── control/               # Command logic and vehicle communication
-├── hardware/                  # Wiring diagrams, parts lists, Pi code
-└── tests/
+ Laptop screen (4 flickering boxes)
+          |  user looks at one
+          v
+ OpenBCI Cyton  --- EEG (occipital) ---+
+ (8 ch, 250 Hz)  --- EMG (R forearm) --+--> Laptop: SSVEP decoder + EMG stop detector
+                                                     |
+                                                     |  UDP over Wi-Fi: direction / STOP
+                                                     v
+                                     Raspberry Pi car: motors + obstacle sensor
+                                     (obstacle logic can veto or adjust a command)
 ```
 
-### Literature note template
-Each file in `docs/literature/` follows this format:
-- Citation
-- Paradigm
-- Hardware and channel count
-- Number of subjects
-- Decoding method
-- Reported performance (accuracy, ITR, decision time)
-- Relevance to this project
-- Key takeaways
+**Rule:** all signal processing runs on the laptop. The Pi receives simple commands, drives the motors, and runs the obstacle logic.
 
 ---
 
-## 10. Open questions
+## 3. Hardware and software
 
-To be resolved during Phase 1 unless noted.
-
-1. Is SSVEP confirmed as the primary paradigm, or does the literature review favor another approach or a hybrid?
-2. How will the gaze limitation of SSVEP be handled at the wheelchair stage?
-3. What EMG hardware is available, and can it be recorded through the Cyton or does it need a separate device?
-4. Which public SSVEP dataset will be used for Phase 2?
-5. What stimulus frequencies are usable given the display's refresh rate?
-6. What exact numeric targets should the Phase 4 gate use (accuracy, decision time, idle false-positive rate)?
-7. Which RC car or robot kit and motor driver will be used?
-8. What wheelchair will be available for Phase 6, and how will it be interfaced?
-9. What are UCLA's IRB requirements if other participants are ever tested?
-
----
-
-## 11. Starting references
-
-- Wolpaw et al. (2002). Brain-computer interfaces for communication and control.
-- Fernández-Rodríguez et al. (2016). Review of real brain-controlled wheelchairs.
-- Lin et al. (2006). CCA-based frequency recognition for SSVEP-based BCIs.
-- Chen et al. (2015, PNAS). High-speed spelling with a noninvasive brain-computer interface.
-- Rebsamen et al. (2010). A brain-controlled wheelchair to navigate in familiar environments.
-- Iturrate et al. (2009). A noninvasive brain-actuated wheelchair based on a P300 neurophysiological protocol and automated navigation.
-- Tonin et al. (2022, iScience). Learning to control a BMI-driven wheelchair for people with severe tetraplegia.
-
-Full notes for each reference live in `docs/literature/`.
+| Part | Choice | Notes |
+|---|---|---|
+| EEG / EMG amplifier | OpenBCI Cyton, 8 ch, 250 Hz | Bluetooth dongle; timing jitter is not yet measured |
+| EEG montage | O1, Oz, O2, PO3, POz, PO4, PO7, PO8 | See open question 1 about freeing a channel for EMG |
+| Stimulus display | MacBook screen at a **fixed 60 Hz** | Frequencies 7.5, 8.57, 10, 12 Hz (whole frame counts) |
+| Car | Raspberry Pi robot car kit | Model to be chosen |
+| Obstacle sensor | To be chosen | e.g. ultrasonic for a first version |
+| Python | 3.11 in `.venv` | PsychoPy does not install on 3.14 (decision log 2026-10-22) |
+| Acquisition | BrainFlow | |
+| Stimulus | PsychoPy (frame-locked flicker) | |
+| Analysis | NumPy, SciPy, MNE-Python | |
+| Decoding | CCA to start; filter-bank CCA or TRCA if needed | |
+| Car link | UDP over Wi-Fi | |
 
 ---
 
-## 12. Revision history
+## 4. Milestones
+
+Work through these roughly in order. Each has a "done when" check. Milestones 5 and 6 (the car) do not depend on EEG and can be built in parallel whenever convenient.
+
+| # | Milestone | Done when | Status |
+|---|---|---|---|
+| M1 | SSVEP data-collection app | A fullscreen session at fixed 60 Hz runs with close to zero dropped frames, and saves raw data, events and metadata | Built; fixing frame drops and buffer flush |
+| M2 | SSVEP signal check (offline) | Eyes-closed alpha peak visible; spectral peaks at each stimulus frequency; offline CCA clearly above 25% chance | Not started |
+| M3 | Real-time SSVEP on screen | Live app shows the decoded direction; target about 85% accuracy and a decision within about 3 s | Not started |
+| M4 | EMG stop | Right-forearm clench detected live, fast and every time, with no false stops during normal SSVEP use | Not started |
+| M5 | Car driven from the laptop | Pi car drives from keyboard commands over UDP, and stops on its own if commands stop arriving | Not started |
+| M6 | Obstacle detection | Car stops before hitting an obstacle. Stretch: steers around it | Not started |
+| M7 | Full shared-control demo | Drive a short course with SSVEP directions and EMG stop, with the obstacle system preventing collisions | Not started |
+
+---
+
+## 5. Safety rules (always apply)
+
+- **Physical kill switch** on the car that does not depend on any software.
+- **EMG stop overrides** every EEG command.
+- **Fail-safe:** if the data stream drops, decoding confidence is low, or the Pi stops receiving commands, the car stops.
+- **Slow speed caps** on the car.
+- **Battery only:** the laptop runs on battery (charger unplugged) while the Cyton is worn.
+- **Only the project lead is tested.** Check UCLA IRB requirements before testing anyone else.
+- Research prototype, not a medical device.
+
+---
+
+## 6. Working rules
+
+1. **Check the signal before building on it.** Look at the raw spectra before trusting a decoder. If CCA fails on real data, run the notebook on a public SSVEP dataset to tell a code bug from a weak signal.
+2. **Build as you go, one milestone at a time.** Do not build later milestones early unless the project lead asks.
+3. **Log decisions** in `docs/DECISION_LOG.md` (date, options, choice, why).
+4. **Log every recording session** in `docs/experiments/` (copy `_TEMPLATE.md`), including failed ones.
+
+---
+
+## 7. Open questions
+
+Not yet decided. Ask the project lead rather than assuming.
+
+1. **EMG hardware:** record EMG on one Cyton channel (leaving 7 EEG channels), add a Daisy board, or use a separate device?
+2. **Command set:** what do the four boxes mean? (Proposed: forward, reverse, left, right, matching the current up/down/left/right layout.)
+3. **Idle behavior:** when the user is not looking at any box, does the car keep doing the last command, or stop?
+4. **Obstacle behavior:** what does "avoid" mean at first: stop only, or stop and turn?
+5. **Car kit and obstacle sensor:** which ones?
+
+---
+
+## 8. Repository layout
+
+```
+docs/        Charter, decision log, experiment logs (literature/ is optional notes)
+data/raw/    Recordings, never edited, not committed to Git
+notebooks/   Offline analysis (ssvep_quicklook.ipynb)
+src/         acquisition -> processing -> decoding -> control, plus stimulus
+hardware/    Car wiring, parts list, Pi code
+tests/       Tests
+```
+
+---
+
+## 9. Revision history
 
 | Version | Date | Changes |
 |---|---|---|
-| 0.1 | 2026-09-29 | Initial draft |
-| 0.2 | 2026-10-22 | Fast-tracked Phase 3 SSVEP data-collection tooling during Phase 1 (Status field, Section 5) |
-| 0.3 | 2026-10-22 | Python 3.11 for the project environment (Section 3.3) |
+| 0.1 to 0.3 | 2026-09-29 to 2026-10-22 | Original six-phase wheelchair charter (see Git history) |
+| 1.0 | 2026-10-22 | Rewritten around a shared-control RC car: milestones replace phases, literature phase dropped, wheelchair deferred |
