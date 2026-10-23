@@ -33,7 +33,7 @@ class CytonStream:
     """Owns one BrainFlow session. Use as a context manager so the stream is
     always stopped and the session released, even on errors."""
 
-    def __init__(self, serial_port=None, synthetic=False, buffer_seconds=900):
+    def __init__(self, serial_port=None, synthetic=False, buffer_seconds=1800):
         if not synthetic and not serial_port:
             raise ValueError("Pass serial_port, or synthetic=True")
         self.synthetic = synthetic
@@ -48,7 +48,8 @@ class CytonStream:
         self.marker_channel = BoardShim.get_marker_channel(self.board_id)
         self.timestamp_channel = BoardShim.get_timestamp_channel(self.board_id)
         # Ring buffer holds the whole session; data is pulled once at the end
-        # so nothing reads the board while the stimulus is flickering.
+        # so nothing reads the board while the stimulus is flickering. 1800 s
+        # leaves margin over a full session (~12 min with default settings).
         self.buffer_size = int(buffer_seconds * self.sampling_rate)
         self._streaming = False
 
@@ -59,6 +60,11 @@ class CytonStream:
 
     def insert_marker(self, code):
         self.board.insert_marker(float(code))
+
+    def flush(self):
+        """Discard everything buffered so far (e.g. the wait screen), so the
+        ring buffer only has to hold the recording itself."""
+        self.board.get_board_data()
 
     def get_all_data(self, tail_seconds=0.5):
         """Return and clear everything in the ring buffer (rows x samples).

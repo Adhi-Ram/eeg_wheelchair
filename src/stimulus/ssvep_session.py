@@ -282,6 +282,7 @@ def main():
         if not args.quick:
             sess.wait_for_space("SSVEP session\n\nKeep your gaze on the cued box when it flickers.\n\n"
                                 "Press SPACE to start. Esc aborts.")
+        stream.flush()  # drop wait-screen data so a long wait can't overflow the buffer
         event.clearEvents()  # a stale keypress must not abort the first frame
         win.frameIntervals = []  # stats exclude the wait screen
         sess.flip(M.SESSION_START)

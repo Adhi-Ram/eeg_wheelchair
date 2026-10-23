@@ -66,7 +66,7 @@ Work through these roughly in order. Each has a "done when" check. Milestones 5 
 
 | # | Milestone | Done when | Status |
 |---|---|---|---|
-| M1 | SSVEP data-collection app | A fullscreen session at fixed 60 Hz runs with close to zero dropped frames, and saves raw data, events and metadata | Built; fixing frame drops and buffer flush |
+| M1 | SSVEP data-collection app | A fullscreen session at fixed 60 Hz runs with close to zero dropped frames, and saves raw data, events and metadata | Built; fixing frame drops |
 | M2 | SSVEP signal check (offline) | Eyes-closed alpha peak visible; spectral peaks at each stimulus frequency; offline CCA clearly above 25% chance | Not started |
 | M3 | Real-time SSVEP on screen | Live app shows the decoded direction; target about 85% accuracy and a decision within about 3 s | Not started |
 | M4 | EMG stop | Right-forearm clench detected live, fast and every time, with no false stops during normal SSVEP use | Not started |
