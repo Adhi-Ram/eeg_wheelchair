@@ -4,7 +4,7 @@
 |---|---|
 | Project lead | Adhitya (UCLA Bioengineering) |
 | Status | Phase 1: Research (Phase 3 SSVEP data-collection tooling fast-tracked, see decision log 2026-10-22) |
-| Charter version | 0.2 (draft) |
+| Charter version | 0.3 (draft) |
 | Last updated | 2026-10-22 |
 
 ---
@@ -87,6 +87,7 @@ Two previous attempts did not succeed. Their failure modes shape this charter.
 | Benchmarking on public data | MOABB |
 | Decoding | CCA / filter-bank CCA to start; TRCA as a later option |
 | Vehicle communication | UDP over Wi-Fi, laptop to Raspberry Pi |
+| Python | 3.11 in `.venv` (PsychoPy does not install on 3.14; see decision log 2026-10-22) |
 
 **Architecture rule:** All signal processing and decoding runs on the laptop. The Raspberry Pi only receives simple commands and drives motors.
 
@@ -279,3 +280,4 @@ Full notes for each reference live in `docs/literature/`.
 |---|---|---|
 | 0.1 | 2026-09-29 | Initial draft |
 | 0.2 | 2026-10-22 | Fast-tracked Phase 3 SSVEP data-collection tooling during Phase 1 (Status field, Section 5) |
+| 0.3 | 2026-10-22 | Python 3.11 for the project environment (Section 3.3) |

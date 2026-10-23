@@ -28,6 +28,30 @@ Copy this block for each new decision.
 
 <!-- Add entries below, newest first. -->
 
+## 2026-10-22: Simplify the project to a shared-control RC car with milestones
+
+- **Context:** The six-phase wheelchair charter, plus fast-tracking Phase 3 work, made it hard to track where the project stands. After reading some of the research, the project lead settled on a concrete design.
+- **Options considered:**
+  1. Keep the six phases and keep adding exceptions: thorough, but confusing to follow.
+  2. Rewrite the charter around one concrete goal with a simple milestone checklist and build as you go.
+- **Decision:** Option 2. The goal is a shared-control RC car: SSVEP picks the direction, EMG on the right forearm is the stop, and an onboard obstacle system stops or steers around obstacles. The literature phase and the public-data validation phase are dropped as required steps. The wheelchair is deferred.
+- **Reasoning:** A single goal and a short checklist are easier to follow. The core safeguard is kept as a working rule: check the raw signal before trusting a decoder, and use a public dataset only if results on real data are unclear.
+- **Consequences:** Charter rewritten (v1.0) with milestones M1 to M7; CLAUDE.md and README updated. The SSVEP data-collection code already built counts as M1. Earlier entries below are kept as history; their phase references are superseded.
+- **Status:** Accepted
+
+
+## 2026-10-22: Use Python 3.11 for the project environment
+
+- **Phase:** 1 (Research and planning)
+- **Context:** The SSVEP stimulus needs PsychoPy. The existing `.venv` was Python 3.14.2. On 3.14, pip only finds PsychoPy 2023.1.3 (newer releases do not support 3.14), and that version fails to install because its pinned numpy does not build (`pkgutil.ImpImporter` removed). A dry run on Homebrew Python 3.11 resolved PsychoPy 2026.2.4 and BrainFlow 5.23.0 cleanly.
+- **Options considered:**
+  1. Rebuild `.venv` on Python 3.11: one environment for acquisition, stimulus, and analysis. Cost: numpy and scipy drop to the versions PsychoPy accepts (numpy 2.5.3 -> 2.3.5, scipy 1.18.1 -> 1.17.1).
+  2. Keep 3.14 for analysis and add a separate 3.11 environment for the stimulus: newest analysis libraries, but two environments and two requirements files to keep in sync.
+- **Decision:** Option 1.
+- **Reasoning:** The stimulus and acquisition run in one process (markers are inserted from the PsychoPy flip), so they must share an environment anyway. One environment is simpler, and nothing in the current scope needs numpy 2.5 or scipy 1.18. mne 1.13.2 imports on the new versions (not otherwise exercised yet; the quick-look notebook uses numpy/scipy).
+- **Consequences:** `.venv` rebuilt with Homebrew `python3.11`; `requirements.txt` regenerated with `pip freeze` (now includes PsychoPy and its dependencies, plus ipykernel/nbconvert for the notebook). Charter Section 3.3 updated (v0.3).
+- **Status:** Accepted
+
 ## 2026-10-22: Fast-track SSVEP data-collection tooling (Phase 3 work) during Phase 1
 
 - **Phase:** 1 (Research and planning)
